@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
+
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -208,6 +210,40 @@ func envTest() {
 	log.Println(c)
 }
 
+func memoryTest() {
+	s1 := make([]int, 1000)
+	fmt.Println(len(s1))
+	fmt.Println(cap(s1))
+
+	s2 := make([]int, 0, 1000)
+	fmt.Println(len(s2))
+	fmt.Println(cap(s2))
+
+	m := make(map[string]string, 1000)
+	fmt.Println(len(m))
+}
+
+func stringConnectionTest() {
+	src := []string{"Back", "To", "The", "Future", "Part", "III"}
+	var builder strings.Builder
+	builder.Grow(100)
+	for i, word := range src {
+		if i != 0 {
+			builder.WriteByte(' ')
+		}
+		builder.WriteString(word)
+	}
+	log.Println(builder.String())
+}
+
+func timeTest() {
+	now := time.Now()
+	tz, _ := time.LoadLocation("America/Los_Angeles")
+	future := time.Date(2015, time.October, 21, 7, 28, 0, 0, tz)
+	fmt.Println(now.String())
+	fmt.Println(future.Format(time.RFC3339Nano))
+}
+
 func main() {
 	iotaTest()
 	errorTest()
@@ -218,4 +254,7 @@ func main() {
 	functionalOptionTest()
 	commandlineTest()
 	envTest()
+	memoryTest()
+	stringConnectionTest()
+	timeTest()
 }
