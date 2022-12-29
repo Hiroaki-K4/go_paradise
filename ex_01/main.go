@@ -244,6 +244,90 @@ func timeTest() {
 	fmt.Println(future.Format(time.RFC3339Nano))
 }
 
+func timeDurationTest() {
+	fiveMinute := 5 * time.Minute
+	fmt.Println("fiveMinute: ", fiveMinute)
+	var seconds int = 10
+	tenSeconds := time.Duration(seconds) * time.Second
+	fmt.Println("tenSeconds: ", tenSeconds)
+
+	past := time.Date(1955, time.November, 12, 6, 38, 0, 0, time.UTC)
+	dur := time.Now().Sub(past)
+	fmt.Println("dur: ", dur)
+
+	fiveMinuteAfter := time.Now().Add(fiveMinute)
+	fiveMinuteBefore := time.Now().Add(-fiveMinute)
+	fmt.Println("fiveMinuteAfter: ", fiveMinuteAfter)
+	fmt.Println("fiveMinuteBefore: ", fiveMinuteBefore)
+
+	// fmt.Println("3 seconds start")
+	// time.Sleep(3 * time.Second)
+	// fmt.Println("3 seconds end")
+
+	jst, _ := time.LoadLocation("Asia/Tokyo")
+	now := time.Date(2021, 6, 8, 20, 56, 00, 000, jst)
+	nextMonth := now.AddDate(0, 1, 0)
+	fmt.Println(nextMonth)
+}
+
+type Book struct {
+	Title string
+	Author string
+	Publisher string
+	ReleasedAt time.Time
+	ISBN string
+}
+
+type Person struct {
+	FirstName string
+	LastName string
+}
+
+func NewPerson(first, last string) *Person {
+	return &Person{
+		FirstName: first,
+		LastName: last,
+	}
+}
+
+type Parent struct{}
+
+func (p Parent) m1() {
+	p.m2()
+}
+
+func (p Parent) m2() {
+	fmt.Println("Parent")
+}
+
+type Child struct {
+	Parent
+}
+
+func (c Child) m2() {
+	fmt.Println("Child")
+}
+
+func structTest() {
+	jst, _ := time.LoadLocation("Asia/Tokyo")
+	book := Book{
+		Title: "Real world",
+		Author: "Shibukawa",
+		Publisher: "olily",
+		ISBN: "48",
+		ReleasedAt: time.Date(2017, time.June, 14, 0, 0, 0, 0, jst),
+	}
+	fmt.Println(book.Title)
+
+	person := NewPerson("aaa", "bbb")
+	fmt.Println("First: ", person.FirstName)
+	fmt.Println("Last: ", person.LastName)
+
+	c := Child{}
+	c.m1()
+	c.m2()
+}
+
 func main() {
 	iotaTest()
 	errorTest()
@@ -257,4 +341,6 @@ func main() {
 	memoryTest()
 	stringConnectionTest()
 	timeTest()
+	timeDurationTest()
+	structTest()
 }
