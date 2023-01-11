@@ -2,14 +2,20 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"os"
-	"encoding/json"
 	"encoding/csv"
+	"encoding/json"
+	"fmt"
+	"go/doc/comment"
 	"io"
+	"log"
+	"net/http"
+	"os"
+	"sync"
+
+	"database/sql"
 
 	"github.com/gen2brain/beeep"
+	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 type Warning interface {
@@ -183,6 +189,67 @@ func csvWriterTest() {
 	}
 }
 
+func dbTest() {
+	db, err := sql.Open("pgx", "host=localhost port=5432 user=testuser dbname=testdb password=pass sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+	books := []Book{book1, book2}
+	res, err := sql.NewInsert().Model(&books).Exec(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, book := range books {
+		fmt.Println(book.ID) // book id is scanned automatically
+	}
+}
+
+type Comment struct {
+	Message string
+	UserName string
+}
+
+func httpTest() {
+	var mutex = &sync.RWMutex{}
+	comments := make([]Comment, 0, 1000)
+
+	http.HandlerFunc("/comments", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		switch r.Method {
+		case http.MethodGet:
+			mutex.RLock()
+
+			if err := json.NewEncoder(w).Encode(comments); err != nil {
+				http.Error(w, fmt.Sprintf(`{"status":"%s"}`, err), http.StatusInternalServerError)
+			}
+			mutex.RUnlock()
+
+		case http.MethodPost:
+			var c Comment
+			if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+				http.Error(w, fmt.Sprintf(`{"status":"%s"}`, err), http.StatusInternalServerError)
+				return
+			}
+			mutex.Lock()
+			comments = append(comments, c)
+			mutex.Unlock()
+
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"status": "created"}`))
+		
+		default:
+			http.Error(w, `{"status":"permits only GET or POST"}`, http.StatusMethodNotAllowed)
+		}
+	})
+	http.ListenAndServe(":8888", nil)
+}
+
 func main() {
 	interfaceTest()
 	castTest()
@@ -192,4 +259,7 @@ func main() {
 	omitEmptyTest()
 	csvReaderTest()
 	csvWriterTest()
+	// docker run -d --name my-postgres -e POSTGRES_USER=testuser -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=testdb -p 5432:5432 postgres
+	// dbTest()
+	httpTest()
 }
